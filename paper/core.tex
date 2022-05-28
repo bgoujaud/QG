@@ -1,0 +1,624 @@
+\begin{abstract}
+We analyze worst-case convergence guarantees of first-order optimization methods over a function class extending that of smooth and convex functions. This class contains convex functions that admit a simple quadratic upper bound. Its study is motivated by its stability under minor perturbations.
+We provide a thorough analysis of first-order methods, including worst-case convergence guarantees for several methods, and demonstrate that some of them achieve the optimal worst-case guarantee over the class. We support our analysis by numerical validation of worst-case guarantees using performance estimation problems. A few observations can be drawn from this analysis, particularly regarding the optimality (resp. and adaptivity) of the heavy-ball method (resp. heavy-ball with line-search). Finally, we show how our analysis can be leveraged to obtain convergence guarantees over more complex classes of functions. Overall, this study brings insights on the choice of function classes over which standard first-order methods have working worst-case guarantees.
+\end{abstract}
+
+% s function class relaxes the smoothness assumption and is motivated by the fact that $\QG^+$ satisfies \textit{condition continuity}, a desirable property when analyzing first-order methods.
+% We analyze several such methods, and provide tight convergence guarantees.
+% Three methods achieve the optimal convergence rate over the class. Our analysis is supported by the derivation of \textit{interpolation conditions}, that allows to numerically verify all results.
+% We observe that a heavy-ball algorithm results in acceleration (w.r.t.~subgradient descent) and achieves the optimal convergence guarantee, a surprising result with respect to the smooth case.  Moreover, using line-search, we obtain a parameter-free algorithm which is adaptive to the class parameter in $\QG^+$, and to the function class, as it also achieves the optimal rate for Lipschitz functions, a strongly desirable property in practice.  
+% Finally, we leverage our results to obtain convergence bounds for more complex classes of functions, that combine the difficulties of the $\QG^+$ and Lipschitz classes.
+
+
+% \begin{keywords}
+%     Convex optimization, quadratic growth, performance estimation, first-order methods.
+% \end{keywords}
+
+\section{Introduction}\label{sec:introduction}
+In this paper, we consider the problem of minimizing a convex (closed proper) function
+\begin{equation}\label{eq:opt}
+\fs\triangleq\min_{x\in \R ^d} f(x),
+\end{equation}
+where $f: \R^d \to \R$ is assumed to have a non-empty set of global minimizers denoted by $\mathcal{X}_\star$ (which is necessarily convex). Convergence properties of first-order optimization are typically analyzed through worst-case analyses under the \emph{black-box} model~\citep{Book:NemirovskyYudin}. In this formalism, nontrivial guarantees are obtained by assuming the function to be minimized to satisfy certain regularity conditions. In particular, it is common to assume Lipschitz continuity of the gradients of $f$ (also often referred to as smoothness of $f$) as well as (strong) convexity of~$f$. First-order methods and their analyses for minimizing such functions in the black-box model occupied a great deal of attention, see, e.g.,~\citep{Book:NemirovskyYudin,Book:polyak1987,Nest03a}.
+
+Due to the practical success of first-order methods in large-scale applications, and particularly when aiming for only low to medium accuracy solutions (\citet{bottou2007tradeoffs} motivate this goal for machine learning), a few trends emerged in the first-order optimization literature. Among them, a particular focus concerned the question of understanding minimal working assumptions under which one could design efficient first-order methods. In other words, many authors looked for weaker/alternate versions to the standard smoothness and strong convexity-type assumptions, still allowing to obtain suitable working guarantees for standard first-order methods.
+
+\textbf{Relaxations of strong convexity-type assumptions.} Convexity alone is not sufficient to a priori guarantee ``fast'' convergence of usual first-order methods. On the other hand, strong convexity allows to obtain faster (geometric) rates but is a very strong condition. Therefore, many authors studied conditions in between convexity and strong convexity, aiming to obtain faster rates under relatively generic assumptions. In particular, different authors considered the restricted secant inequality~\citep{zhang2013gradient, guille2022gradient}, the error bound~\citep{luo_error_1993}, {\L}ojasiewicz-type inequalities~\citep{polyak_gradient_1963}, and many more~\citep{NIPS2015_5718,kurdyka1998gradients,liu2014asynchronous,gong2014linear,necoara2016linear,hardt2016gradient,abbaszadehpeivasti2022conditions}. Relations between these assumptions were treated at length in~\citep{bolte2017error,zhang2017restricted}. Among those, one of the weakest relaxation is the so-called (lower) quadratic growth, see~\citep{bonnans1993second, ioffe1994sensitivity,anitescu2000degenerate}. Recently, those notions turned out to be useful, e.g. for studying proximal gradient methods, see~\citep{cui2017quadratic, drusvyatskiy2016error, drusvyatskiy2015quadratic, zhang2020, zhang2017linear,chieu2021quadratic}. In the rest of the paper, we focus on (non strongly) convex functions.
+
+\textbf{Relaxations of smoothness-type assumptions.} Generalization of smoothness assumptions were less investigated in the literature. Still, a few such relaxations have emerged, including the {relative smoothness}, see~\citep{bauschke2017descent,lu2016relativelysmooth,dragomir2021optimal, hanzely2018accelerated}, restricted smoothness~\citep{agarwal2011fast} and restricted Lipschitz-continuous gradient~\citep{zhang2013gradient}. In this work, we consider instead the set of convex functions satisfying the (upper) \textit{quadratic growth} condition, as follows.
+
+\begin{Def}
+    A function $f$ is $L$-quadratically upper bounded (denoted $L$-$\QG^+$) if for all $x \in \mathbb{R}^d$: \[f(x)-f_\star \leq \frac{L}{2} d(x, \mathcal{X}_\star)^2,\]
+    where $d(x, \mathcal{X}_\star) = \min_{x_\star \in \mathcal{X}_\star} \|x-x_\star\|_2$.
+    We denote the set of such functions by $\QG^+(L)$, and by $\QG^+$ when $L$ is left unspecified. 
+\end{Def}
+
+% Give examples of QG non smooth 
+This assumption is weaker than smoothness. First, any $L$-smooth function (i.e., with $L$-Lipschitz gradient) also belongs to $\QG^+(L)$. On the other hand, 
+\begin{enumerate}[itemsep=1pt,topsep=0pt,leftmargin=*]
+    \item some functions do belong to $\QG^+$ while not being smooth for any value of $L$.  In particular $\QG^+$ contains all Lipschitz non-smooth convex functions which are twice differentiable at all their optimal points.
+    Let us mention a few rules for obtaining (not necessarily smooth) $\QG^+$ functions: (i) any function that can be written as $x\mapsto h(x^\top M x)$, where $h$ is convex Lipschitz continuous and $M$ is a positive semidefinite matrix, or (ii)~$x\mapsto h(N(x))$, where $h$ is convex and smooth (or $\QG^+$) and $N$ is a norm (e.g. $N=\|\cdot\|_2$, $N=\|\cdot\|_1$ or $N=\|\cdot\|_\infty$).
+    \item Some functions belong to $\QG^+(L_Q)$ while being smooth only for some $L_S \gg L_Q$
+    % \footnote{
+    (see e.g., Eq.(3) and Proposition 4.6 in \citep{guille2021study}.)
+    % }. 
+    Consequently, even though the worst case convergence rate over the class of $\QG^+(L)$ functions cannot improve on the rate for $L$-smooth functions, it is possible for a given smooth function that the guarantee provided by the rate on the $\QG^+$ class is actually \textit{better} than the one resulting from the rate as a smooth function.
+    %Moreover, including non-smooth functions is not the only advantage of this class. Even for smooth function, it might happen that the $\QG^+$ parameter is really small in comparison to the smoothness one and therefore, the convergence guarantee obtained for $\QG^+$ functions might be more interesting than the one obtained for smooth functions.
+\end{enumerate}
+% (iii)~any squared Lipschitz continuous convex function $h$ whose minimum is $h_\star = 0$.
+More generally, the later example is related to \emph{condition continuity}, introduced by~\citet[Definition 4.9]{guille2021study}.
+\textit{Condition continuity} is a property of function classes, defined by the fact that a minor modification of the gradient of the function, at any point away from the optimum, cannot strongly affect the class parameter $L$. This is a desirable property for first-order methods for which the output typically continuously depends on the gradients of the functions minimized: if the function is slightly perturbed away from the optimum, the tuning and convergence guarantees of the algorithm should not be affected. The $\QG^+$ class satisfies condition continuity, while the class of smooth convex functions does not: 
+a minor perturbation of an $L$-smooth function (thus $L$-$\QG^+$) can be $L_Q$-$\QG^+$ and $L_S$-smooth, with $L_S \gg L_Q$. This also motivates studying $\QG^+$.
+
+% Coincidentally, they introduce the upper equivalent of Quadratic Growth, $\QG^+$, and show it possesses a propriety called ``condition continuity'', desirable for the theoretical study of first-order optimization, and not verified by smoothness.
+
+% one can easily build examples of an $L_{S}$-smooth function, and $L_Q$-$\QG^+$function such that $L_Q \ll L_S$ and consequently even tough the worst case convergence rate over the class of smooth functions might benefit from a better dependency w.r.t. the number of iterations, it might be actually better to consider an algorithm and convergence rate designed for a \textit{larger} class of functions. We detail these points hereafter. 
+
+
+% However, argued that even a smooth objective function might have a better conditioning for weaker \textit{upper conditions}, and this discrepancy affects optimality results. Therefore, weaker assumptions should not be discarded even when smoothness is verified. Coincidentally, they introduce the upper equivalent of Quadratic Growth, $\QG^+$, and show it possesses a propriety called <<condition continuity>>, desirable for the theoretical study of first-order optimization, and not verified by smoothness.
+
+
+
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%
+
+%\subsection{Motivation}
+%While the study of smooth and/or strongly convex functions has attracted much attention in recent decades, we  propose to consider a different class of functions.  Our motivation to consider the $\QG^+$ class is threefold: first, this class is more \textit{stable} to minor perturbations of the function, second, it allows to consider simple function examples that may not be smooth, third, we highlight that 
+
+%Finally, we show that our analysis of the $\QG^+$ class provides a very flexible framework that also allows to incorporate non differentiable functions at the optimal point. 
+
+
+
+%Moreover, including non-smooth functions is not the only advantage of this class. Even for smooth function, it might happen that the $\QG^+$ parameter is really small in comparison to the smoothness one and therefore, the convergence guarantee obtained for $\QG^+$ functions might be more interesting than the one obtained for smooth functions.
+
+
+
+    %  A lot of functions that suffer from non-differentiability on some countable set of points.
+
+
+
+\textbf{Contributions and organization of the paper.}
+The rest of the paper is organized in two main sections. First, in Section~\ref{sec:algorithms_and_worst-case_analyses}, we analyze a few first-order methods, namely the subgradient method and the heavy-ball method with and without a line-search. We provide worst-case complexity bounds on the convergence rates  as well as corresponding lower complexity bounds.
+We also provide a lower complexity bound for minimizing convex functions in $\QG^+$ via first-order methods. Finally, we provide {interpolation/extensions} results for this class of problems, which allows exploring/deriving all previous results in a principled way (using performance estimation problems~\cite{drori2014performance,taylor2017smooth}).
+We summarize those results in \Cref{tab:summary_results}, together with precise references to the corresponding statements.
+Secondly, we review the main consequences of our analysis in \Cref{sec:discussion_take_away}. More specifically, we underline the facts that (a) the heavy-ball Algorithm~\ref{alg:ogm} and \ref{alg:ogm_ls} are optimal on this class of functions, furthermore, (b) Algorithm~\ref{alg:ogm_ls} is  adaptive: it achieves the optimal convergence rate for both Lipschitz-continuous functions and $\QG^+$ functions without requiring knowledge of any class parameter. Then, we describe how our theory can be exploited for automatically obtaining convergence rates for different classes of functions. Lastly (in \Cref{apx:restart}), we discuss results that can be obtained when restricting the class to functions satisfying additional assumptions (a relaxation of strong-convexity).
+
+\begin{table*}
+{
+\caption{\label{tab:summary_results}
+Summary of the worst-case guarantees obtaining after $n$ iterations of a few different first-order methods on the class of convex $L$-$\QG^+$ functions, which are obtained in Section~\ref{sec:algorithms_and_worst-case_analyses} and \Cref{apx:subgrad}.
+Two main methods are studied, namely the (sub)gradient and the heavy-ball methods. Some guarantees concern the worst-case function value accuracy at the last iterate. The term ``average'' in the third column refers to the function value on the Polyak-Rupert averaged iterate. All the provided bounds are proportional to $R^2 = d(x_0, \mathcal{X}_\star)^2$, where $x_0$ denotes the starting point of the methods.
+% The \textbf{first column} provides the name of the method as well as the section we introduce it in. Additionally, several variants of the same method are studied and the \textbf{second column} precises the one of interest. 
+% The \textbf{fourth} and \textbf{fifth columns} contains respectively the upper bound and lower bound guarantees and the \textbf{third column} precises whether those bounds correspond to a guarantee over the function value of the last iterate or of the Polyak-Rupert average.
+% The \textbf{last line} shows that the two variants of the heavy-ball methods are optimal among all first-order methods, and that subgradient descent method is also optimal if we consider the Polyak-Rupert averaging iterate.
+}
+\begin{center}
+{\renewcommand{\arraystretch}{1.8}
+\resizebox{\linewidth}{!}{
+ \begin{tabular}{@{}llrllrlr@{}}
+% \begin{tabular}{@{}llllllll@{}}
+\specialrule{2pt}{1pt}{1pt}
+Method & \multicolumn{2}{l}{Step-sizes $(\gamma_t)_{0\le t\le n-1}$ } & Iterate & \multicolumn{2}{l}{Upper bound } & \multicolumn{2}{l}{Lower bound} \\
+% \specialrule{2pt}{1pt}{1pt}
+\cmidrule{1-1}\cmidrule(l){2-3}\cmidrule(l){4-4}\cmidrule(l){5-6} \cmidrule(l){7-8}
+\multirow{3}{*}{Subgradient (Sec. \ref{subsec:subgradient_method_on_qg+convex_functions})} & $\frac{1}{L}$ & (Alg.~\ref{alg:subgrad}) & Average & $\frac{L}{2}\frac{R^2}{n+1}$ &  (Th. \ref{thm:gd_average}) & $\frac{L}{2}\frac{R^2}{n+1}$ &(Rem. \ref{rem:gd_average}) \\ 
+\cline{2-8}
+
+& $\gamma_t$ & (Alg.~\ref{alg:subgrad})& Last & $\times$ & & $\frac{LR^2}{2}L\gamma_{n-1}$ &(Th. \ref{thm:non_convergence_gd}) \\
+\cline{2-8}
+
+& $\sim \frac{1}{2L\sqrt{t}}$& (Alg. \ref{alg:gd_decreasing_step_sizes}) & Last & $\sim \frac{LR^2}{4\sqrt{n}}$ & (Conj. \ref{conj:gd_sqrt}) & $ \sim \frac{LR^2}{4\sqrt{n}}$ & (Th. \ref{thm:non_convergence_gd}) \\ \hline
+
+\multirow{2}{*}{Heavy-ball (Sec. \ref{subsec:proposed_methods})} & $\frac{1}{L}\frac{1}{t+2}$ & (Alg. \ref{alg:ogm}) & Last & $\frac{L}{2}\frac{R^2}{n+1}$ & (Th. \ref{thm:hb_general}) & $\frac{L}{2}\frac{R^2}{n+1}$ & \\ \cline{2-8}
+
+& line-search &(Alg. \ref{alg:ogm_ls}) & Last & $\frac{L}{2}\frac{R^2}{n+1}$ & (Th. \ref{thm:hb_general}) & $\frac{L}{2}\frac{R^2}{n+1}$ & \\ \hline
+
+First-order (Sec. \ref{subsec:first_order_lower_bound}) & Any& & Any & - &  & $\frac{L}{2}\frac{R^2}{n+1}$ &(Th. \ref{thm:general_lower_bound}) \\
+
+\specialrule{2pt}{1pt}{1pt}\vspace{0em}
+\end{tabular}}
+\vspace{-1cm}
+}
+\end{center}}
+\end{table*}
+\textbf{Notation and background results.} For problem~\eqref{eq:opt}, the set $\mathcal{X}_\star$ of minimizers of $f$ is closed and convex ($f$ is proper closed and convex by assumption). Therefore, there exists a unique projection $\pi_{\mathcal{X_\star}}$ onto $\mathcal{X}_\star$, verifying:
+$\|x-\pi_{\mathcal{X_\star}}(x)\|_2 = d(x, \mathcal{X}_\star).$
+We use the classical $\partial f$ for denoting the subdifferential of the function $f$. Namely, the subdifferential of $f$ at $x\in\mathbb{R}^d$ is the set of all subgradients of $f$ at $x$: $
+    \partial f(x) = \lbrace g | \forall y \in \mathbb{R}^d, f(y) \geq f(x) + \left< g | y - x \right> \rbrace.$
+    % The elements of $\partial f(x)$ are called the \emph{subgradients of $f$ at $x$}. 
+    Note that $0 \in \partial f(x) \Leftrightarrow x \in \mathcal{X}_\star$; moreover, if $f \in \QG^+$, then for all $x \in \mathcal{X}_\star$, $\partial f(x) = \lbrace 0 \rbrace$.
+    %  (i.e., $f$ is differentiable on an open set $C\supset\mathcal{X}_\star$).
+
+% Indeed, smoothness is defined by the fact that for all $x, y \in \mathbb{R}^d$, $f(x)-f(y) \le \ $
+
+%\begin{Rem}[Differentiability on $\mathcal{X}_\star$]
+%\end{Rem}
+    
+    % \section{\texorpdfstring{$\QG^+$-convex: definitions and notations}{QG+-convex: definitions and notations}}\label{sec:qg+_convex_definitions_and_notations}
+    % \input{sections/qg_convex_definitions_and_notations}
+    
+    \section{\texorpdfstring{A few worst-case guarantees for minimizing $\QG^+$ convex functions}{A few worst-case guarantees for minimizing QG+ convex functions}} \label{sec:algorithms_and_worst-case_analyses}
+
+        In this section, we provide the main technical results of this paper, summarized in \Cref{tab:summary_results}. In \Cref{subsec:subgradient_method_on_qg+convex_functions}, we study the behavior of a \emph{(sub)gradient} method on convex $\QG^+$ functions. A lower complexity bound on the convergence of any first-order method
+        % on this class of problems
+        is provided in~\Cref{subsec:first_order_lower_bound}. In~\Cref{subsec:proposed_methods}, we introduce the heavy-ball method under consideration and prove its worst-case optimality. Finally, we discuss how interpolation conditions were used for obtaining these results in~\Cref{subsec:Interpol}.
+        
+        \subsection{\texorpdfstring{(Sub)gradient method on $\QG^+$ convex functions}{(Sub)gradient method on QG+ convex functions}}\label{subsec:subgradient_method_on_qg+convex_functions}
+        
+\begin{wrapfigure}[5]{R}{0.4\textwidth}
+\vspace{-1.8cm}
+\begin{minipage}{0.4\textwidth}
+\begin{algorithm}[H]
+    \caption{Subgradient method}\label{alg:subgrad}
+    % \SetAlgoLined
+    \KwInput{$x_0$, $(\gamma_t)_{0 \leq t \leq n}$}
+    \For{$k=1 \ldots n$}{
+        Query $g_{k-1} \in \partial f(x_{k-1})$;
+        
+        $x_k \gets x_{k-1} - \gamma_{k-1} g_{k-1}$
+    }
+    \KwOutput{$(x_t)_{0 \leq t \leq n}$}
+\end{algorithm}
+\end{minipage}
+\end{wrapfigure}
+In this subsection, we consider \Cref{alg:subgrad}: the subgradient method, for $n$ iterations and a sequence of step-sizes $(\gamma_{t})_{0\le t\le n-1 }$.
+The following result provides a convergence guarantee for the averaged function value accuracy throughout the iterative procedure.
+%\begin{center}
+%\fbox{\parbox{\textwidth}{
+\begin{restatable}{Th}{convergenceofsubgradientmethodinaverage}\textbf{\emph{(Convergence of \Cref{alg:subgrad} in average)}}
+    \label{thm:gd_average}
+    Let $f$ be an $L$-$\QG^+$ convex function. Applying (sub)gradient method on $f$ with step-size $\gamma \triangleq \frac{1}{L}$ leads to the following guarantee:
+    \begin{equation}
+        \frac{1}{n+1}\sum_{k=0}^n (f(x_k) - f_\star) \leq \frac{L}{2}\frac{1}{n+1} d(x_0, \mathcal{X}_\star)^2.
+    \end{equation}
+\end{restatable}
+%}}
+%\end{center}
+
+\noindent \textit{Sketch of proof.}
+    The proof consists in proving that at each step
+    $
+        f(x_k) - f_\star \leq \frac{L}{2}d(x_k, \mathcal{X}_\star)^2 - \frac{L}{2}d(x_{k+1}, \mathcal{X}_\star)^2
+    $
+    and recognizing a telescopic sum on the right hand side.
+    See Appendix \ref{apx:subgrad}.% for a detailed proof.
+$\hfill\blacksquare$
+
+By convexity of $f$, this result automatically implies a convergence guarantee for the Polyak-Ruppert~(PR) averaging~\citep{polyak1992acceleration, ruppert1988efficient}, $\bar x_n = \frac{1}{n+1}\sum_{k=0}^n x_k$ with the same convergence rate. 
+For $L$-smooth convex functions, the same worst-case convergence rate is achieved by both the PR averaging and the last iterate.
+It is therefore natural to wonder if the subgradient method verifies the same convergence guarantee for the \emph{last iterate}, on $\QG^+$ convex functions. For $L$-smooth convex functions, \citet[Theorem 3.2]{drori2014performance} provide the following lower bound on the convergence of Algorithm~\ref{alg:subgrad}:
+% \begin{Th}
+%     \label{th:gd_smooth} 
+for any $\gamma_k=\gamma \in \left[0, 2/L \right]$, there exists a $L$-smooth convex function and a starting point~$x_0$ s.t.
+\begin{equation}
+    f(x_n) - f_\star \geq \max\left(\frac{L}{2}\frac{1}{1 + 2nL\gamma}, \frac{L}{2} \left( 1 - L\gamma \right)^{2n} \right)d(x_0, \mathcal{X}_\star)^2. \label{eq:gd_smooth}
+\end{equation}
+% \end{Th}
+\citet[Theorem 3.1]{drori2014performance} also provide a corresponding worst-case guarantee of the form $f(x_n) - f_\star \leq \frac{L}{2}\frac{1}{1 + 2nL\gamma}d(x_0, \mathcal{X}_\star)^2$ for when $\gamma\in (0,\tfrac1L)$, which ensures convergence in function value accuracy with a constant step-size rule $\gamma_k=\gamma\in (0,\tfrac1L)$ at a rate $O(1/n)$.
+%and is interestingly achieved on the same Huber function \eqref{eq:huber} starting from $x_0 = 1 + 2nL\gamma$.
+
+Here we provide a stricter lower bound for the convergence of the function value for the last iterate: contrary to what happens for smooth convex functions, subgradient methods with constant step-sizes cannot be guaranteed to converge on $\QG^+$ convex functions.
+
+%\begin{center}
+%\fbox{\parbox{\textwidth}{
+\begin{restatable}{Th}{nonconvergenceofgdwithlowerboundedstepsizes}\textbf{\emph{(Lower bound for~\Cref{alg:subgrad} - final iterate).}}\label{thm:non_convergence_gd}
+    \noindent For any sequence
+    $(\gamma_i)_{0 \leq i \leq n-1}>0$ and any $\varepsilon>0$, there exists an $L$-$\QG^+$ convex function $f$ that verifies, after $n$ iterations of \Cref{alg:subgrad} with step-sizes $(\gamma_i)_{0 \leq i \leq n-1}$,
+    \begin{equation} \label{eq:LB_QG}
+        f(x_n) - f_\star \geq \frac{L}{2}L\gamma_{n-1} d(x_0, \mathcal{X}_\star)^2 - \varepsilon.
+    \end{equation}
+\end{restatable}
+%}}
+%\end{center}
+
+\noindent \textit{Sketch of proof.}
+The proof consists in finding a function defined on $\mathbb{R}^3$ such that all the iterates except the last one are very close to each other. As $\QG^+$ convex functions might not be differentiable, subgradients might vary very quickly. Therefore, the last iterate might be far away from the others, although all the previous iterates are clustered. A complete proof is provided in Appendix~\ref{apx:subgrad}.
+$\hfill\blacksquare$
+
+As a result, it is necessary to enforce $\gamma_n \rightarrow 0$ for ensuring convergence of Algorithm~\ref{alg:subgrad} on all problem instances. On the other hand, a similar lower bound to~\eqref{eq:gd_smooth} (using the same Huber function as that used for the class of smooth convex functions, see~\citep{drori2014performance}, or~\citep[Section 4]{taylor2017smooth}) and modifying $x_0$ to account for varying step-sizes (we use $x_0 = 1 + 2 \sum_{k=0}^{n-1} L\gamma_k$), one can obtain:
+\begin{equation}
+    f(x_n) - f_\star \geq \frac{L}{2}\frac{1}{1 + 2 \sum_{k=0}^{n-1} L\gamma_k} d(x_0, \mathcal{X}_\star)^2. 
+    \label{eq:LB_smooth}
+\end{equation}
+Consequently the worst-case convergence is slower than $O(1 / n)$ as soon as $\gamma_k\rightarrow 0$. Overall, the convergence is provably worse for the last iterate over the $\QG^+(L)$-class than over the class of $L$-smooth convex functions, even though guarantees match for the PR-averaged iterate. Actually, the lower bound is at least the maximum of the RHSs of \Cref{eq:LB_QG,eq:LB_smooth}. In \Cref{apx:subgrad}, we introduce and analyze \Cref{alg:gd_decreasing_step_sizes}, that corresponds to \Cref{alg:subgrad} with a specific sequence of step-sizes such that \Cref{eq:LB_QG,eq:LB_smooth} are equal. This results in a decaying sequence of step-sizes scaling as $O(1/\sqrt{n})$. The next section is devoted to a lower complexity bound on the convergence in function accuracy for any black-box first-order method.
+        % \input{sections/gradient_descent_analysis}
+
+        \subsection{First-order lower bound}\label{subsec:first_order_lower_bound}
+The next theorem guarantees that no black-box first-order method can beat a $O(1 / n)$ worst-case guarantee in function values uniformly on the set of $\QG^+$ convex functions.
+
+%\begin{center}
+%\fbox{\parbox{\textwidth}{
+%\begin{restatable}{Th}{lowerboundoffirstorderalgorithm}\textbf{\emph{(Lower complexity bound)}}
+%    \label{thm:general_lower_bound}
+%    Let $n\in\mathbb{N}$ and $(x_k)_{k\le n}$ be any sequence satisfying $x_k - x_0 \in \text{span}\left(g_0, g_1, g_2, \dots, g_{k-1}\right)$ for all $k\leq n$, with $g_i \in \partial f(x_i)$ for $i=0,\ldots,k-1$.
+%    Then, for any $n \geq 0$, there exists a positive integer $d$, a convex $L$-$\QG^+$ function $f$ of input space $\mathbb{R}^d$, and a starting point $x_0\in\mathbb{R}^d$ such that \[f(x_n) - f_\star \geq \frac{L}{2}\frac{1}{n+1} d(x_0, \mathcal{X}_\star)^2.\]
+%\end{restatable}
+%}}
+%\end{center}
+
+\begin{center}
+% \fbox{\parbox{\textwidth}{
+\begin{restatable}{Th}{lowerboundoffirstorderalgorithm}\textbf{\emph{(Lower complexity bound)}}
+    \label{thm:general_lower_bound}
+    Let $n\in\mathbb{N}$. There exists some $d\in\mathbb{N}$ and some convex $L$-$\QG^+$ function $f$ of input space $\mathbb{R}^d$ such that: for any sequence $(x_k)_{0\le k\le n}$ satisfying $x_k - x_0 \in \text{span}\left\{g_0, g_1, g_2, \dots, g_{k-1}\right\}$ for all $k\leq n$ with $g_i \in \partial f(x_i)$ ($i=0,\ldots,k-1$), we have:
+    \[f(x_n) - f_\star \geq \frac{L}{2}\frac{1}{n+1} d(x_0, \mathcal{X}_\star)^2.\]
+\end{restatable}
+% }}
+\end{center}
+
+\noindent \textit{Sketch of proof.}
+    The proof consists in noticing that the function $x \mapsto \frac{L}{2}\|x\|_\infty^2$ allows to explore one new dimension per step and that this new dimension is independent of the way the next point in the sequence is chosen. Therefore, choosing $d=n+1$ allows to ensure that there exists one \textit{unseen} dimension after $n$ iterations. This methodology is common to prove lower bounds in first-order optimization, see, e.g.,~\citep{nemirovskinotes1995,Nest03a,bubeck2014convex}. We refer to Appendix~\ref{apx:lower_bound_1} for the complete proof. The above result is also generalized in Appendix~\ref{apx:lower_bound_2} to account for \textit{any} sequence generated by a black-box first-order (possibly without the span assumption as in, e.g.,~\citep[Chapter 12]{nemirovskinotes1995} for quadratic minimization).
+$\hfill\blacksquare$
+
+One can conclude from \Cref{thm:general_lower_bound} that no black-box first-order method can enjoy a worst-case guarantee better than $f(x_n) - f_\star \leq \frac{L}{2}\frac{1}{n+1} d(x_0, \mathcal{X}_\star)^2$ uniformly on all $d\in\mathbb{N}$, all $f:\mathbb{R}^d\rightarrow\mathbb{R}$ that is convex and $L$-$\QG^+$ and all $x_0\in\mathbb{R}^d$. This entails that \Cref{alg:subgrad}, with constant step-size $1/L$ and PR averaging, is worst-case optimal for decreasing function values on the class of $\QG^+$ and convex functions.
+In the next section, we introduce two alternate methods that also achieve this optimal bound, this time without PR averaging. As we see in the sequel, those further developments allow achieving this optimal bound without explicitly using the knowledge of the constant $L$.
+        
+        \subsection{Two methods with optimal last iterate guarantee}\label{subsec:proposed_methods}
+
+\begin{wrapfigure}[8]{R}{0.5\textwidth}
+\begin{minipage}{0.5\textwidth}
+\vspace{-0.9cm}
+\SetInd{0.5em}{0.3em}
+\begin{algorithm}[H]
+    \caption{Heavy-ball method for $\QG^+$ convex}
+    \label{alg:ogm}
+    \KwInput{$x_0$, $L$}
+    \For{$k=1 \ldots n$}{
+    \text{Pick } $g_{k-1}$ from $\partial f(x_{k-1})$
+    
+    $x_k \gets \frac{k}{k+1}x_{k-1} + \frac{1}{k+1}x_0 - \frac{1}{k+1}\sum_{i=0}^{k-1}\frac{1}{L} g_i$}
+    \KwOutput{$x_n$}
+\end{algorithm}
+\end{minipage}
+\end{wrapfigure}
+
+
+
+In this section, we introduce \Cref{alg:ogm} and \Cref{alg:ogm_ls} which both achieve the optimal convergence guarantee for the last iterate (see \Cref{thm:general_lower_bound}). 
+The first of those two methods explicitly relies on the knowledge of the class parameter $L$ for performing its updates, whereas the second variant allows avoiding using any knowledge on $L$. Note that the update rule from \Cref{alg:ogm} can equivalently be expressed as:
+    \begin{equation}
+        x_k \gets x_{k-1} - \frac{1}{L}\frac{1}{k+1}g_{k-1} + \frac{k-1}{k+1}\left( x_{k-1} - x_{k-2} \right) \label{alg:hb_ogm}
+    \end{equation}
+\begin{wrapfigure}[12]{R}{0.5\textwidth}
+\begin{minipage}{0.5\textwidth}
+\SetInd{0.5em}{0.3em}
+\vspace{-0.8cm}
+\begin{algorithm}[H]
+    \caption{Heavy-ball method with line-search for $\QG^+$ convex}
+    \label{alg:ogm_ls}
+    \KwInput{$x_0$, $v_0 \gets 0$}
+    \For{$k=1 \ldots n$}{
+        $y_k \gets \frac{k}{k+1}x_{k-1} + \frac{1}{k+1}x_0$
+        
+        \text{Pick } $g_{k-1} \in \partial f(x_{k-1})$ such that $\left< g_{k-1} , v_{k-1} \right> = 0$.
+        
+        $v_k \gets v_{k-1} + g_{k-1}$
+        
+        $\alpha_k \gets \arg\min_{\alpha} f\left( y_k + \alpha v_k \right)$
+        
+        $x_k \gets y_k + \alpha_k v_k$
+    }
+    \KwOutput{$x_n$}
+\end{algorithm}
+\end{minipage}
+\end{wrapfigure}
+where $g_{k-1} \in \partial f(x_{k-1})$. This formulation corresponds to the heavy-ball method, as defined in~\citep[Theorem 2]{ghadimi2014global} and for which  authors provided a $O(1/n)$ guarantee for $L$-smooth convex functions.
+    
+\Cref{alg:ogm_ls} takes a similar form, but relies on an exact line-search procedure, avoiding to use any knowledge on $L$. Both methods share the same worst-case guarantee, matching the lower bound result from \Cref{thm:general_lower_bound}. The following theorem provides a necessary condition for an algorithm to share this same worst-case guarantee.
+
+% In the two upcoming sections, we first show a lower bound over all sequences that lie in the span of observed gradients. Then we provide an analysis of the 2 proposed methods. In particular, we show they are optimal on the class of $L$-$\QG^+$ convex functions.
+
+
+% In this section, we state our main result. The next theorem provides a sufficient condition that makes a method an optimal one.
+
+\begin{center}
+% \fbox{\parbox{\textwidth}{
+\begin{restatable}{Th}{mainresult}\textbf{\emph{(Main result: sufficient condition for being worst-case optimal).}}
+    \label{thm:main}
+    Let $\mathcal{A}$ be an iterative first-order method that verifies, for all convex $\QG^+(L)$ function $f$, and starting points $x_0$,
+    \begin{equation}
+        \Big\langle g_k , x_k - \Big[ \frac{k}{k+1}x_{k-1} + \frac{
+        1}{k+1}x_0 - \frac{1}{k+1}\sum_{i=0}^{k-1}\frac{1}{L} g_i \Big] \Big\rangle \leq 0. \label{eq:optimal_assumption}
+    \end{equation}
+    for some sequence $(g_i)_{i\in\mathbb{N}}$ of subgradients $g_i\in\partial f(x_i)$, and where $(x_i)_{i\in\mathbb{N}}$ are the iterates of $\mathcal{A}$. Then, the output $x_n$ of $\mathcal{A}$ achieves the worst-case guarantee:
+    \begin{equation*}
+        f(x_n) - f_\star \leq \frac{L}{2}\frac{1}{n+1}d(x_0, \mathcal{X}_\star)^2.
+    \end{equation*}
+\end{restatable}
+% }}
+\end{center}
+
+\noindent \textit{Sketch of proof.}
+    The proof is based on a Lyapunov analysis; for $k\geq 0$, we define the sequence
+      $k(f(x_{k-1}) - f_\star) + \frac{L}{2} \| x_0 - \pi_{\mathcal{X_\star}}(x_0) - \sum_{i=0}^{k-1}\frac{1}{L} g_i \|^2$
+    and show it is a decreasing.
+    See Appendix \ref{apx:main_result} for a complete and detailed proof.
+$\hfill\blacksquare$
+
+Inequality~\eqref{eq:optimal_assumption} is clearly satisfied for \Cref{alg:ogm} by ensuring the right hand side of the inner product being identically $0$. For \Cref{alg:ogm_ls}, the right hand side of the inner product in~\eqref{eq:optimal_assumption} is colinear to the search direction $\sum_{i=0}^{k-1} g_i$. First-order optimality conditions of the exact line-search procedure enforces the inner product in~\eqref{eq:optimal_assumption} to be identically $0$. The next corollary follows.
+
+\begin{center}
+% \fbox{\parbox{\textwidth}{
+\begin{restatable}{Cor}{optimalityofthetwoproposedalg} \label{cor:optimal}
+Let $n\in\mathbb{N}$, $d\in\mathbb{N}$, $f$ be a convex $\QG^+$ function, and $x_0\in\mathbb{R}^d$. Also let $x_n$ be the output of either Algorithm \ref{alg:ogm} or Algorithm \ref{alg:ogm_ls}, we have:
+    $
+        f(x_n) - f_\star \leq \frac{L}{2}\frac{1}{n+1}d(x_0, \mathcal{X}_\star)^2.
+    $
+\end{restatable}
+% }}
+\end{center}
+
+In the next section, we discuss how such worst-case analyses were obtained in a principled way, through so-called performance estimation problems (PEPs). An important ingredient to use this methodology is to develop \emph{interpolation} (a.k.a.~\emph{extension}) results for the  convex $\QG^+$ class.        
+        % \subsection{Main results: worst-case guarantees of proposed methods}\label{subsec:main_results_worst-case_guarantees_of_proposed_methods}
+        % \input{sections/optimal_algorithms_analysis}
+     
+\subsection{\texorpdfstring{Extension/interpolation results for $\QG^+$ convex functions}{Extension-interpolation results for QG+ convex functions}}
+\label{subsec:Interpol}
+The problem of interpolating/extending within a class of functions can be stated as follows. Given a set of triplet $(x_i, g_i, f_i)_{i \in I}\subset \mathbb{R}^d\times\mathbb{R}^d\times \mathbb{R}$ for some $d\in\mathbb{N}$ and some index set $I$, the question of interest is that of recovering a function $f$ in a prescribed class of convex functions $\mathcal{F}$ satisfying
+\[ f_i=f(x_i) \text{ and } g_i\in\partial f(x_i) \text{ for all } i\in I.\]
+A similar problem, often referred to as convex integration, consists in finding such functions by only specifying some subgradients but no function values; see~\citep{Rock70}; for the case where $\mathcal{F}$ is the class of (closed and proper) convex functions, this problem was also treated at length in~\citep{lambert2004finite}. Motivated by applications to performance estimation problems (see below), this problem was studied in~\citep{taylor2017smooth} for the cases where $\mathcal{F}$ is the class of closed proper (possibly strongly) convex (possibly smooth) functions. In this case, it is possible to obtain simple necessary and sufficient conditions for the set $(x_i, g_i, f_i)_{i \in I}$ to be interpolable; we refer to those conditions as \emph{interpolation conditions}. Such conditions take the form of a set of inequalities on $(x_i, g_i, f_i)_{i \in I}$, and sometimes allow to conveniently deal with discrete versions of functions within a certain class $\mathcal{F}$ (for which we have interpolation conditions at our disposal). There exists a few classes of functions, typical for the analysis of first-order methods, for which such conditions exist, see, e.g.,~\citep[Theorem 3.3--3.6, Theorem 3.10]{taylor2017exact}.
+%such conditions for smooth and/or strongly convex functions were developed in~\citep{taylor2017smooth}. For such setups, it is in general necessary to obtain conditions guaranteeing the existence of a solution to the interpolation/extension problems. Such conditions are often referred to as \textit{interpolation conditions} 
+% \comAT{end of Adrien's editions}
+%% ENd of Adrien's edit
+% \textit{Interpolation conditions} for a class of functions are simple conditions on a given a set of points, gradients and function values, that characterize the \textit{existence} of a function within  the class, that has these particular gradients and values at these particular points. In other words, they allow to assert if given values of the function and its gradient, it is possible to \textit{interpolate} between those points, while being in the class under consideration. Those conditions are also sometimes referred to as extension conditions.
+The next theorem provides interpolation conditions for the class of convex $\QG^+$ functions.
+
+\begin{center}
+% \fbox{\parbox{\textwidth}{
+\begin{restatable}{Th}{interpolationconditions}\textbf{\emph{(Interpolation conditions)}}
+    \label{thm:interp}
+    Let $(x_i, g_i, f_i)_{i \in I}$ a family of elements in $\mathbb{R}^d \times \mathbb{R}^d \times \mathbb{R}$. Set $I_\star$ the (assumed) non-empty subset of $I$ of the indices of elements $(x_i, g_i, f_i)$ verifying $g_i=0$.
+    
+    Then, there exists a $\QG^+(L)$ and convex function $f$ interpolating those points (i.e. such that $\forall i \in I, f(x_i) = f_i \text{ and } g_i \in \partial f(x_i)$) if and only if
+    \begin{eqnarray}
+        \forall i \in I, \forall j \in I, && f_i \geq f_j + \left< g_j, x_i - x_j \right> \label{eq:interp_convexity} \\
+        \forall i \in I_\star, \forall j \in I, && f_i \geq f_j + \left< g_j, x_i - x_j \right> + \frac{1}{2L} \|g_j\|^2 .\label{eq:interp_convexity_qg}
+    \end{eqnarray}
+\end{restatable}
+% }}
+\end{center}
+
+\noindent \textit{Sketch of proof.}
+    The proof is derived in two steps.
+    First we notice that~\eqref{eq:interp_convexity} corresponds to the convexity of the function, and we prove \eqref{eq:interp_convexity_qg} combining the $2$ inequalities respectively corresponding to convexity and $L$-$\QG^+$ assumptions.
+    Reciprocally, we explicitly build a $L$-$\QG^+$ convex function from~\eqref{eq:interp_convexity} and~\eqref{eq:interp_convexity_qg}.
+    See Appendix~\ref{apx:interpolation_conditions} for a detailed proof.
+$\hfill\blacksquare$
+
+\textbf{Application to Performance estimation problems (PEPs).} PEPs were introduced by~\citet{drori2014performance} for developing new analyses of first-order methods; see also~\citep{ drori2014contributions, kim2016optimized} for the first works on this topic. PEPs were later formalized using the concept of \emph{convex interpolation} by~\citep{taylor2017smooth, taylor2017exact}.
+PEPs formulate the search for worst-case guarantees as infinite dimensional optimization problems over the considered class of functions, e.g.,
+\[
+\text{Worst case}\left(\text{Alg.}~\ref{alg:subgrad}, n=1, \gamma=\tfrac{1}{L}, \text{ convex } \QG^+(L)  \right) \triangleq \max_{\footnotesize\shortstack{$f\in \QG^+(L)$ \text{ convex } \\ $x_1 \in x_0 -\frac{1}{L} \partial f(x_0)$} } \frac{f(x_1) - f_\star}{ d(x_0,\mathcal X_\star)^2},
+\]
+for the case of 1-step subgradient descent. In order to numerically solve those problems, it is  needed to transform them into a finite dimensional problem. 
+To that end, interpolation conditions play a crucial role, by allowing to reduce the optimization over the (infinite dimensional) class of functions to an optimization over a constrained set of vectors, thus finite dimensional problem.
+
+Consequently, \Cref{thm:interp} allows us to use the PEP framework to study the class of $\QG^+(L)$ convex functions. Therefore, we obtained and verified all the results of this work thanks to the different programming tools that have recently been developed for easing the access to the PEP framework (see the packages~\citep{taylor2017performance, goujaud2022pepit}).
+For each algorithm studied in this paper, PEPs also provided the associated tight bound.
+Finally, PEPs also guided us to prove the lower bound of Theorem \ref{thm:general_lower_bound} thanks to the study of the greedy first-order method (\emph{GFOM}) from~\citep{drori2020efficient}.
+%Following the methodology described in the latest, we also derived the main results.
+
+\vspace{-0.5em}
+\section{Discussion and concluding remarks}
+\vspace{-0.5em}
+\label{sec:discussion_take_away}
+In this section, we discuss a few takeaways of the results. The messages of this section include optimality and adaptivity results for heavy-ball with a line-search, a discussion on the applicability of this functional class beyond its simple use, as well as a few words on the limitations of considering this simple class of convex functions.
+
+% \subsection{Optimality and adaptivity of heavy-ball}
+
+\subsection{Optimality of HB algorithm}
+
+An ever-recurring question in the field of optimization is the convergence of HB methods on smooth and strongly convex functions. On the one hand, HB is optimal (in the sense that it achieves the optimal worst-case guarantee) for convex quadratic objectives and can then be seen as a variant of Chebyshev iterative method \citep{flanders1950numerical,lanczos1952solution, young1953richardson}. Even with a simple (constant) tuning of the step-size and momentum parameters, it is optimal (i.e., achieving rates $O(1/n^2)$ for $L$-smooth convex quadratics, and $(1-O(\sqrt{\mu/L}))^n$ if the problem is also $\mu$-strongly convex.).
+
+On the other hand, the  method does not generalize well to (non quadratic) smooth strongly convex functions: \citet[Figure 7]{lessard2016analysis} built a function for which the heavy-ball method, tuned with the same dependence to $L$ and $\mu$ than for the quadratic case, fails to converge.
+More generally, while other sets of hyper-parameters allow to obtain convergence for the class of smooth and (strongly) convex~\citep{ghadimi2014global}, heavy-ball was never showed to accelerate w.r.t.~the gradient descent method, and the possibility to obtain such an acceleration remains an open question to the best of our knowledge. Simultaneously, Nesterov's accelerated gradient method~\citep{nesterov1983method} does achieve such an acceleration.
+
+In summary, while for quadratic convex problems it has the optimal worst-case guarantee, heavy-ball is believed not to satisfy this property for smooth and (strongly) convex functions.  Interestingly, \Cref{cor:optimal} shows that heavy-ball is optimal (with rate $O(1/n)$) over the (larger) class $\QG^+$ convex.
+
+This observation questions the existence of intermediary classes (smaller than $\QG^+$ convex and containing quadratic functions), over which heavy-ball would achieve a $O(1/n^2)$ convergence guarantee. In the next section, we discuss the adaptivity of the method.
+
+% In order to solve the linear systems,  
+% This method is a special tuning of the Heavy-ball method and
+% is optimal for the optimization of quadratic objectives.
+% However, in practice, we prefer tuning Heavy-ball with constant parameters, which still achieves the same linear rate (up to a sub-linear correction term), often referred to ``acceleration''.
+
+% Interestingly, the Heavy-ball
+
+% In \citep{guille2021study}, authors argued that the classes of smooth and / or strongly convex functions suffers from a flaw that could have permitted to create the counter-exemple of \citep{lessard2016analysis}, and referred to as ``conditioning discontinuity''.
+
+% Interestingly, the set of $\QG^+$ convex functions is a class of functions that does not suffer from this flaw, and we show that the Heavy-ball method is the optimal algorithm over this class, supporting the message of \citep{guille2021study}.
+
+
+\subsection{\texorpdfstring{Adaptivity of HB line-search algorithm 3}{Adaptivity of HB line-search algorithm \ref{alg:ogm_ls}}}
+The search for adaptive and parameter free methods is a major challenge in optimization as the regularity of the function (both in terms of class and class-parameter $L$) is often unknown. In the rest of the section, we discuss the fact that~\Cref{alg:ogm_ls} provides a parameter-free and adaptive to $\QG^+(L)$ and $M$-Lipshitz functions method. Those results are summarized in \Cref{tab:optimality_summary}.
+
+\begin{table*}
+{
+\caption{\label{tab:optimality_summary}
+Optimality of the proposed methods over the set of $\QG^+$ convex functions and $M$-Lipschitz convex functions. ELS: Exact Line-Search. $\cmark$ indicates optimality among the class and $\xmark$ the contrary. All counter examples are given in App.~\ref{apx:tab}. $\ ^{\dagger}$:~constants resulting in optimal convergence rates depend on the class, thus for example heavy-ball with step-size $\frac{\text{constant}}{(t+2)}$ is not adaptive as it does not achieve the optimal rate for both classes with the same constant. $\ ^\ddagger$: up to a $\log$ factor.
+} \vspace{-0.3cm}
+\begin{center}
+{\renewcommand{\arraystretch}{1.8}
+\resizebox{\linewidth}{!}{
+ \begin{tabular}{@{}lllcrcrc@{}}
+% \begin{tabular}{@{}llllllll@{}}
+\specialrule{2pt}{1pt}{1pt}
+\multicolumn{3}{c}{Method} & \multicolumn{4}{c}{Function class} & Parameter free \\
+ \cmidrule{1-3}\cmidrule(l){4-7}\cmidrule(l){8-8}
+Algorithm & Step-sizes $(\gamma_t)_{0\le t\le n-1}$  & Iterate & \multicolumn{2}{c}{$\QG^+(L)$ convex} & \multicolumn{2}{c}{$M$-Lipschitz convex}   \\
+\cmidrule(l){4-5}\cmidrule(l){6-7}
+Subgradient (Alg.~\ref{alg:subgrad}) & $\text{constant}^{\dagger}$ & Average &  $\cmark$ & (Thm.~\ref{thm:gd_average}) & $ \xmark$ & (Thm.~\ref{thm:subgrad_constant_lower_lip}) & $\xmark$ \\
+Subgradient (Alg.~\ref{alg:gd_decreasing_step_sizes}) & $ \text{constant}^{\dagger}/\sqrt{t}$ & Average & $\xmark$ & \eqref{eq:LB_smooth} & $\cmark^\ddagger$ & \citep[Sec. 3.2.3]{Nest03a} & $\xmark$ \\
+Subgradient (Alg.~\ref{alg:subgrad_els}) & ELS & Average &  $\xmark$ & (Thm.~\ref{thm:gd_els_lower_bound}) & $\xmark$ & (Thm.~\ref{thm:gd_els_lower_bound}) & $\cmark$ \\ 
+Subgradient (Alg.~\ref{alg:subgrad_els}) & ELS & Last &  $\xmark$ & (Thm.~\ref{thm:gd_els_lower_bound}) & $\xmark$ & (Thm.~\ref{thm:gd_els_lower_bound}) & $\cmark$ \\ 
+\midrule
+Heavy-ball (Alg.~\ref{alg:ogm}) & $\text{constant}^{\dagger}/(t+2)$ & Last & $\cmark$ & (Cor.~\ref{cor:optimal}) & $\cmark$ & \citep[][, Cor. 3]{drori2020efficient} & $\xmark$ \\ 
+Heavy-ball (Alg.~\ref{alg:ogm_ls}) & ELS & Last & $\cmark$ & (Cor.~\ref{cor:optimal}) & $\cmark$ & \citep[][, Cor. 4]{drori2020efficient} & $\cmark$ \\
+\specialrule{2pt}{1pt}{1pt}\vspace{0em}
+\end{tabular}}
+\vspace{-1cm}
+}
+\end{center}}
+\end{table*}
+
+
+
+\textbf{Non convergence of the line-search version of \Cref{alg:subgrad}.}
+While the line-search version of Algorithm~\ref{alg:ogm} (i.e. Algorithm~\ref{alg:ogm_ls}) allows to get rid of the knowledge of $L$ without degrading the convergence guarantee for the latest iterate, this is not the case for subgradient method. In fact subgradient with line-search \Cref{alg:subgrad_els} does not converge, even when looking at the PR averaged iterate (see \Cref{thm:gd_els_lower_bound}). It thus destroys the  guarantee given in Theorem \ref{thm:gd_average} for Algorithm~\ref{alg:subgrad} with constant step-size $1/L$.
+% as in Theorem \ref{thm:gd_average}, even when looking at the PR averaged iterate.
+
+\textbf{\Cref{alg:subgrad} is not adaptive to the class of Lipschitz functions.} While \Cref{alg:subgrad} with averaging and constant step-size $1/L$ is optimal for the class $\QG^+(L)$ convex, for any sequence of constant step-sizes, neither the average nor the last iterate of \Cref{alg:subgrad} converge over the class of $M$-Lipschitz functions (see \Cref{thm:subgrad_constant_lower_lip}). On the other hand, to obtain a nearly (up to a log factor) optimal convergence rate $O(\log(n) / \sqrt{n})$, one can use $\gamma_t = \text{constant}/\sqrt{t}$ for $t\in \{1, \dots, n\}$, but such a sequence degrades the converge for $\QG^+$ as proved by the lower bound~\Cref{thm:non_convergence_gd}.
+
+\textbf{Adaptivity of HB line-search (Algorithm~\ref{alg:ogm_ls}).}
+    While Algorithm \ref{alg:ogm_ls} requires to perform exact line-search steps, its first advantage over Algorithm \ref{alg:ogm} is not requiring the knowledge of the class parameter~$L$. \Cref{alg:ogm_ls} is thus  adaptive to the class parameter $L$.
+    This is analogous of \emph{SSEP-based subgradient method} presented in \citet[Corollary 3]{drori2020efficient} and its line-search version \citep[See][Corollary 4]{drori2020efficient} that are both optimal on the class of Lipschitz continuous and convex functions. The first one requires the knowledge of the parameter class $M$, the distance of the starting point to optimum $d(x_0, \mathcal{X}_\star)$ as well as the number of performed steps, while the second one replaces this knowledge by exact line-search steps.
+    Moreover, we note that \emph{SSEP-based subgradient method} and Algorithm \ref{alg:ogm} are very similar to each other. Indeed, their respective update steps can be written as
+    % \begin{align*}
+        % &&&
+        $x_k \gets \frac{k}{k+1}x_{k-1} + \frac{1}{k+1}x_0 - \frac{d(x_0, \mathcal{X}_\star)}{M\sqrt{N+1}} \frac{1}{k+1}\sum_{i=0}^{k-1} g_i 
+        $
+        and $
+        % \\
+        % &&& 
+        x_k \gets \frac{k}{k+1}x_{k-1} + \frac{1}{k+1}x_0 - \frac{1}{L}\frac{1}{k+1}\sum_{i=0}^{k-1} g_i.
+        $
+    % \end{align*}
+    
+    Remarkably, only the two constants in front of $\frac{1}{k+1}\sum_{i=0}^{k-1} g_i$ differ between the  two methods. Thus, their two line-search versions are identical.
+    We conclude from Corollary \ref{cor:optimal} and \citet[Corollary 4]{drori2020efficient} that Algorithm \ref{alg:ogm_ls} is optimal on the classes of Lipschitz convex functions \emph{and} on the classes of $\QG^+$ convex functions.
+    One can run this algorithm without knowing the type of conditions that are verified by the objective function and still benefit from a guarantee of optimality. This is a significant argument in favor of \Cref{alg:ogm_ls}.
+
+
+\subsection{Leveraging our analysis to obtain convergence bounds on other classes}
+    
+    One of the major limitations of the $\QG^+$ class is that all functions within the class must be twice differentiable at the set of optimal points. This typically excludes some Lipschitz functions, as for example $x \mapsto \|x\|_1$ or problems involving Lasso regularization. In this section, we show that our \Cref{sec:algorithms_and_worst-case_analyses} can be leveraged to automatically obtain rates on more complete classes of functions, that combine the limitations of the Lipschitz convex and $\QG^+$ convex classes.\\
+    To introduce these classes, we denote $h$ a generic function defined on $\mathbb{R}^+$ and verifying: $h(0)=0$, $h$ is strictly increasing and $h$ is concave. We consider the class of functions with $h$ \textit{relative growth}.
+    \begin{Def}
+        A function $f$ is $h$-relatively upper bounded (denoted $h$-$\RG^+$) if for all $x \in \mathbb{R}^d$: \[f(x)-f_\star \leq h\left( d(x, \mathcal{X}_\star)^2 \right).\]
+        We denote the set of such functions by $\RG^+(h)$, and by $\RG^+$ when $h$ is left unspecified.
+        \label{def:h_rg}
+    \end{Def}
+    These classes enable to cover the $\QG^+$ classes, the Lipschitz classes, and more.
+    \begin{Rem}(Examples)
+        \label{rem:h_linear}
+        These three examples of functions $h$ satisfy the required assumptions:
+        \begin{enumerate}[noitemsep, topsep=1pt,leftmargin=*]
+            \item When $h$ is the linear function $h: z \mapsto \frac{Lz}{2}$, then simply $\RG^+(h) = \QG^+(L)$.
+            \item When $h$ is the function $h: z \mapsto M\sqrt{z}$, then simply $\RG^+(h) = \left\{ M\text{-Lipschitz continuous}\right\}$.
+            \item When $h: z \mapsto M\sqrt{z} + \frac{Lz}{2}$ a broader class  containing the limitations of both previous ones.
+        \end{enumerate}
+    \end{Rem}
+    In the following, we consider the class of $h$-$\RG^+$ and convex functions. We then propose Algorithm~\ref{alg:hb_general}, which consists in applying \Cref{alg:ogm} (with the update written as in \Cref{alg:hb_ogm}) to the $\QG^+$ convex function $h^{-1} \circ (f - f_\star)$. We obtain the following convergence rate.
+    
+    \begin{figure}[h!]
+    \begin{minipage}{0.49\linewidth}
+     		\SetInd{0.5em}{0.3em}
+    \begin{algorithm}[H]
+        \caption{Heavy-ball method for $h$-$\RG^+$ convex functions}
+        \label{alg:hb_general}
+        \KwInput{$x_0$, $h$, $f_\star$}
+        \For{$k=1 \ldots n$}{
+        Choose ~ $g_{k-1}$ from $\partial f(x_{k-1})$
+        
+        $\gamma_{k-1}= \frac{1}{2(k+1)}\frac{1}{h' \circ h^{-1}\left(f(x_{k-1}) - f_\star\right)} $
+        
+        $x_k\! \gets\! x_{k-1} - \gamma_{k-1} g_{k-1} + \frac{k-1}{k+1}\left( x_{k-1} - x_{k-2} \right)$
+        }
+        \KwOutput{$x_n$}
+    \end{algorithm}
+    \end{minipage}
+    \hspace{0.02\linewidth}
+    \begin{minipage}{0.49\linewidth}
+    \SetInd{0.5em}{0.3em}
+    \begin{algorithm}[H]
+    \caption{Heavy-ball method for Lipschitz continuous convex functions}
+    \label{alg:hb_lip_from_qg}
+    \KwInput{$x_0$, $M$, $f_\star$}
+    \For{$k=1 \ldots n$}{
+    Choose ~ $g_{k-1}$ from $\partial f(x_{k-1})$
+    
+    $\gamma_{k-1}=\frac{1}{k+1}\frac{f(x_{k-1}) - f_\star}{M^2}$
+    
+    $x_k\! \gets\! x_{k-1} - \gamma_{k-1} g_{k-1} + \frac{k-1}{k+1}\left( x_{k-1} - x_{k-2} \right) $
+    }
+    \KwOutput{$x_n$}
+    \end{algorithm}
+    \end{minipage}
+    \end{figure}
+    
+    \begin{center}
+    % \fbox{\parbox{\textwidth}{
+    \begin{restatable}{Th}{hbgeneral}\textbf{\emph{    \label{thm:hb_general}}}
+    Let $f$ an $h-\RG^+$ convex function, and $x_0$ any starting point.
+    Then Algorithm~\ref{alg:hb_general} verifies
+    % \begin{equation*}
+        $f(x_n) - f_\star \leq h\left(\frac{d(x_0, \mathcal{X}_\star)^2}{n+1} \right).$
+    % \end{equation*}
+    In the examples of~\Cref{rem:h_linear}, this gives:
+    % (Convergence of \Cref{alg:hb_general} in special cases.)
+    %     \label{rem:special_h_guarantees}
+        \begin{enumerate}[noitemsep, topsep=1pt,leftmargin=*]
+            \item When $h$ is the linear function $h: z \mapsto \frac{Lz}{2}$ ($f$ is $L$-$\QG^+$ convex), then $f(x_n) - f_\star \leq \frac{L}{2}\frac{d(x_0, \mathcal{X}_\star)^2}{n+1}$.
+            \item When $h$ is the function $h: z \mapsto M\sqrt{z}$ ($f$ is $M$-Lip. convex), then $f(x_n) - f_\star \leq M\frac{d(x_0, \mathcal{X}_\star)}{\sqrt{n+1}}$.
+            \item When $h$ is the function $h: z \mapsto M\sqrt{z} + \frac{Lz}{2}$, then $f(x_n) - f_\star \leq M\frac{d(x_0, \mathcal{X}_\star)}{\sqrt{n+1}} + \frac{L}{2}\frac{d(x_0, \mathcal{X}_\star)^2}{n+1}$.
+        \end{enumerate}
+    \end{restatable}
+    % }}
+    \end{center}
+    
+    \noindent \textit{Sketch of proof.}
+    The proof consists in inverting $h$ and applying one of the results on the $\QG^+$ convex functions $h^{-1}\left( f - f_\star \right)$.
+    For a detailed proof, see Appendix \ref{apx:upper_assumption}.
+    $\hfill\blacksquare$
+    
+    % We now instantiate this result for the examples listed in~\Cref{rem:h_linear}.
+    
+    
+    
+    We also observe that for $h: z \mapsto \frac{Lz}{2}$, Algorithm $\ref{alg:hb_general}$ is exactly Algorithm $\ref{alg:ogm}$ and we recover the worst-case guarantee provided in Theorem \ref{thm:hb_general}. 
+    Similarly, when considering $h: z \mapsto M\sqrt{z}$, Algorithm $\ref{alg:hb_general}$ is written as \Cref{alg:hb_lip_from_qg} and we recover the worst-case guarantee provided in \citep[Cor. 3]{drori2020efficient}. However, in this case the algorithm is different: the latest requires the knowledge of $d(x_0, \mathcal{X}_\star)$, while \Cref{alg:hb_lip_from_qg}  requires the knowledge of $f_\star$. In this sense, the two proposed methods are complementary.
+    
+    Finally, we emphasize the fact that in practice, a lot of machine learning models requires to minimize non-smooth functions that are neither Lipschitz continuous nor $\QG^+$ (e.g. least-square regressions with lasso penalization of $\text{TV-L}_2$ model widely used in computer vision). These functions can be tackled using the flexible function $h(z) = M\sqrt{z} + \frac{L}{2}z$
+    % While the $\QG^+$ assumption allows for non-differentiability, a $\QG^+$ convex function must be differentiable on $\mathcal{X}_\star$. On the other hand, the Lipschitz continuity assumption allows for non-differentiability on $\mathcal{X}_\star$ but does not allow a larger increase than the distance to optimum.
+    % Hence, in order to allow all this and therefore to include functions such that the objective function of a $\text{TV-L}_2$ model (or any edge preserving denoising models), we propose to consider convex functions $f$ verifying Assumption \ref{assump:h} with $h(z) = M\sqrt{z} + \frac{L}{2}z$.
+    Then, applying \Cref{thm:hb_general} leads to the guarantee given in the third point of \Cref{thm:hb_general} obtained with \Cref{alg:hb_general} where $\gamma_{k-1} \gets \frac{1}{k+1}\frac{1}{L} \Big[ 1 - 1/\sqrt{1 + \frac{2L}{M^2}(f(x_{k-1}) - f_\star)} \Big]$.
+    
+    % \begin{algorithm}
+    %     \caption{Heavy-ball gradient method for convex and Lipschitz continuous functions}
+    %     \label{alg:hb_in_worst_of_both_worlds}
+    %     \KwInput{$x_0$, $L$, $M$, $f_\star$}
+    %     \For{$k=1 \ldots n$}{
+    %     Choose ~ $g_{k-1}$ from $\partial f(x_{k-1})$
+        
+    %     $x_k \gets x_{k-1} - \frac{1}{k+1}\frac{1}{L} \left[ 1 - \frac{1}{\sqrt{1 + \frac{2L}{M^2}\left(f(x_{k-1}) - f_\star\right)}} \right] g_{k-1} + \frac{k-1}{k+1}\left( x_{k-1} - x_{k-2} \right) $
+    %     }
+    %     \KwOutput{$x_n$}
+    % \end{algorithm}
+    
+\textbf{Extension with additional constraint.} In \Cref{apx:restart}, we provide geometric convergence guarantees when the functions are also assumed satisfy a relaxation of strong convexity, $\QG^-$.
+
+\textbf{List of potential applications.}
+The $\QG^+$ class, and its extension to $h-\RG^+$ offer a flexibility that allows to tackle several non-smooth machine learning problems, including for example RELU activation, $L_1$ or TV regularization.
+As an example, the classical TV-$L_2$ denoising problem, which combines a term with quadratic growth with a non-smooth (even at the optimum) term, is neither Lipschitz nor smooth, but belongs to our class $h-\RG^+$, with $h: z \mapsto M \sqrt{z}+\frac{L z}{2}$ (\Cref{rem:h_linear}-3).
+
+\textbf{Limitations.}
+As specific methods have often been designed for those applications, our approach does not bring a systematic improvement. Yet, we believe it paves the way for adaptive methods that could do so.
+Remark that our Algorithm $\ref{alg:ogm_ls}$ is adaptive and optimal for both the class of $\QG^+(L)$ functions, and the class of $M$-Lipschitz continuous ones. Extending our analysis to obtain an adaptive algorithm for $h-\RG^+$, which is left as an open direction, would allow to efficiently tackle TV-$L^2$ type of problems in a parameter-free way.
+
+\paragraph{Conclusion.}
+In this paper, we thoroughly analyze the class of convex $\QG^+$ functions. This function class relaxes the smoothness assumption and is motivated by the fact that $\QG^+$ satisfies \textit{condition continuity}, a desirable property for analyzing first-order methods. 
+We analyze several such methods, and provide tight worst-case guarantees for them.
+Three methods achieve the optimal convergence rate over the class. Our analysis is supported by the derivation of \textit{interpolation conditions} allowing to verify all the results numerically. 
+In particular, we observe that a heavy-ball algorithm results in acceleration (w.r.t.~the subgradient method), attaining the lower complexity bound for this class, a surprising result with respect to the smooth case.  Moreover, using line-search, we obtain a parameter-free algorithm which is adaptive to the class parameter in $\QG^+$, and to the function class, as it also achieves the optimal rate for Lipschitz functions, a strongly desirable property in practice.  
+Finally, we leverage our results to obtain convergence bounds for more complex classes of functions, combining the difficulties of the $\QG^+$ and the Lipschitz classes.
+Overall, this work participates to the trend of questioning the relevance of the most classical assumptions used in the analysis of first-order optimization methods. While our results are not intended to provide a definitive answer to this question, it goes one step further by providing an in-depth analysis for a more stable class of functions. Providing a similar analysis while relaxing convexity is a major open challenge.

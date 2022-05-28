@@ -1,0 +1,264 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2022
+
+
+% ready for submission
+\PassOptionsToPackage{numbers}{natbib}
+% \usepackage{neurips_2022}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+    \usepackage[preprint]{neurips_2022}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+    % \usepackage[final]{neurips_2022}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+    % \usepackage[nonatbib]{neurips_2022}
+
+\usepackage{times}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+% \usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{multirow}
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+% \usepackage{xcolor}         % colors
+\usepackage{faktor}
+\usepackage{hhline}
+\let\proof\relax
+\let\endproof\relax
+\usepackage{thm-restate}
+\usepackage{amssymb}
+\usepackage{wrapfig}
+\newcommand{\numset}[1]{{\\mathbb #1}}
+\usepackage{tikz}
+\usepackage{mathtools, stmaryrd}
+\usepackage{tocloft}
+\usepackage{enumitem}
+
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black}
+}
+
+\usepackage[algo2e, algoruled, boxed, vlined]{algorithm2e}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+
+\SetKwInput{KwInput}{Input}
+\SetKwInput{KwOutput}{Output}
+% \newcommand{\KwInput}[1]{{\textbf{Input:} #1}}
+% \newcommand{\KwOutput}[1]{{\textbf{Output:} #1}}
+
+
+\usepackage[noabbrev]{cleveref}
+
+
+
+
+\title{Optimal first-order methods for convex functions \\ with a quadratic upper bound}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+    Baptiste Goujaud\\
+    CMAP, École Polytechnique, \\ Institut Polytechnique de Paris \\
+    \texttt{baptiste.goujaud@polytechnique.edu}
+    \And
+    Adrien Taylor \\
+    INRIA, École Normale Supérieure, \\ CNRS, PSL Research University, Paris \\
+    \texttt{adrien.taylor@inria.fr}
+    \And
+    Aymeric Dieuleveut \\
+    CMAP, École Polytechnique, \\ Institut Polytechnique de Paris \\ \texttt{aymeric.dieuleveut@polytechnique.edu}
+}
+
+
+% \theoremstyle{plain}
+\newtheorem{Th}{Theorem}[section]
+\newtheorem{Lemma}[Th]{Lemma}
+\newtheorem{Cor}[Th]{Corollary}
+\newtheorem{Prop}[Th]{Proposition}
+
+% \theoremstyle{definition}
+\newtheorem{Def}[Th]{Definition}
+\newtheorem{Assump}[Th]{Assumption}
+\newtheorem{Not}[Th]{Notation}
+\newtheorem{Conj}[Th]{Conjecture}
+\newtheorem{Rem}[Th]{Remark}
+\newtheorem{?}[Th]{Problem}
+\newtheorem{Ex}[Th]{Example}
+
+\def\SC{\operatorname{SC}}
+\def\EB{\operatorname{EB}}
+\def\RSI{\operatorname{RSI}}
+\def\PL{\operatorname{PL}}
+\def\QG{\operatorname{QG}}
+\def\RG{\operatorname{RG}}
+
+
+\usepackage{amssymb}%
+\usepackage{pifont}% http://ctan.org/pkg/pifont
+\newcommand{\cmark}{\textcolor{green!50!black}{\checkmark}}%
+\newcommand{\xmark}{\textcolor{red!50!black}{\times}}%
+% \usepackage{mdframed}
+% \newmdtheoremenv{conj}{Conjecture}
+% \newmdtheoremenv{theo}{Theorem}
+% \newmdtheoremenv{coro}{Corollary}
+
+\usepackage{float}
+% \newfloat{Algorithm}{t}{lop}
+\usepackage{wrapfig}
+\makeatletter
+
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\fs}{f_{\star}}
+
+% \newcommand{\comAT}[1]{{\color{blue}{\bf{}AT}: #1}}
+% \newcommand{\comAD}[1]{{\color{green}{\bf{}AD}: #1}}
+% \newcommand{\comBG}[1]{{\color{red}{\bf{}BG}: #1}}
+
+\begin{document}
+
+\addtocontents{toc}{\protect\setcounter{tocdepth}{0}}
+
+\maketitle
+
+\input{core}
+
+
+\begin{ack}
+    The work of B. Goujaud and A. Dieuleveut is partially supported by ANR-19-CHIA-0002-01/chaire SCAI, and Hi!Paris. A. Taylor acknowledges support from the European Research Council (grant SEQUOIA 724063). This work was partly funded by the French government under management of Agence Nationale de la Recherche as part of the ``Investissements d’avenir'' program, reference ANR-19-P3IA-0001 (PRAIRIE 3IA Institute).
+\end{ack}
+
+% \nocite{*}
+% \bibliographystyle{plain}
+\bibliographystyle{plainnat}
+% \bibliographystyle{unsrt}
+\bibliography{references}
+
+% \section*{Checklist}
+
+% \begin{enumerate}
+
+% \item For all authors...
+% \begin{enumerate}
+%   \item Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?
+%     \answerYes{}
+%   \item Did you describe the limitations of your work?
+%     \answerYes{}
+%   \item Did you discuss any potential negative societal impacts of your work?
+%     \answerNA{}
+%   \item Have you read the ethics review guidelines and ensured that your paper conforms to them?
+%     \answerYes{}
+% \end{enumerate}
+
+% \item If you are including theoretical results...
+% \begin{enumerate}
+%   \item Did you state the full set of assumptions of all theoretical results?
+%     \answerYes{}
+%   \item Did you include complete proofs of all theoretical results?
+%     \answerYes{} A sketches of proof is provided right after each claim, and full proofs are all available in the appendix.
+% \end{enumerate}
+
+% \item If you ran experiments...
+% \begin{enumerate}
+%   \item Did you include the code, data, and instructions needed to reproduce the main experimental results (either in the supplemental material or as a URL)?
+%     \answerNA{}
+%   \item Did you specify all the training details (e.g., data splits, hyperparameters, how they were chosen)?
+%     \answerNA{}
+%         \item Did you report error bars (e.g., with respect to the random seed after running experiments multiple times)?
+%     \answerNA{}
+%         \item Did you include the total amount of compute and the type of resources used (e.g., type of GPUs, internal cluster, or cloud provider)?
+%     \answerNA{}
+% \end{enumerate}
+
+% \item If you are using existing assets (e.g., code, data, models) or curating/releasing new assets...
+% \begin{enumerate}
+%   \item If your work uses existing assets, did you cite the creators?
+%     \answerNA{}
+%   \item Did you mention the license of the assets?
+%     \answerNA{}
+%   \item Did you include any new assets either in the supplemental material or as a URL?
+%     \answerNA{}
+%   \item Did you discuss whether and how consent was obtained from people whose data you're using/curating?
+%     \answerNA{}
+%   \item Did you discuss whether the data you are using/curating contains personally identifiable information or offensive content?
+%     \answerNA{}
+% \end{enumerate}
+
+% \item If you used crowdsourcing or conducted research with human subjects...
+% \begin{enumerate}
+%   \item Did you include the full text of instructions given to participants and screenshots, if applicable?
+%     \answerNA{}
+%   \item Did you describe any potential participant risks, with links to Institutional Review Board (IRB) approvals, if applicable?
+%     \answerNA{}
+%   \item Did you include the estimated hourly wage paid to participants and the total amount spent on participant compensation?
+%     \answerNA{}
+% \end{enumerate}
+
+
+% \end{enumerate}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\clearpage
+\appendix
+
+    \section*{Organisation of the appendix}
+    
+        This appendix contains the proofs of the theorems stated in the main core of the paper. We also state a conjecture and bring some evidence about its statement. This appendix also contains discussions and extended results.
+        
+        Appendix \ref{apx:subgrad} details the results on the subgradient method. Appendix \ref{apx:gd_proof_th1_upper_bound} contains the proof of \Cref{thm:gd_average}, Appendix \ref{apx:gd_lower_bound} contains the proof of \Cref{thm:non_convergence_gd} and Appendix \ref{apx:gd_conjecture} contains a conjecture that does not appear in the main core of the paper. This appendix also contains some evidence supporting this conjecture.
+        
+        Appendix \ref{apx:lower_bound} contains the proofs for lower bounds on the class $\QG^+$ convex.
+        Appendix \ref{apx:lower_bound_1} contains the proofs of \Cref{thm:general_lower_bound} stating the lower bound under the classical assumption that the difference between the iterates lies into the span of observed gradients.
+        Appendix \ref{apx:lower_bound_2} extends the latter results without the aforementioned assumption.
+        
+        Appendix \ref{apx:main_result} contains the proof of Theorem \ref{thm:main}, the main result of the paper, stating that all first order algorithm verifying a given identity, also enjoys an upper bound guarantee.
+        
+        Appendix \ref{apx:tab} contains the proofs of all the claims that figure in \Cref{tab:optimality_summary} that are not already made elsewhere in this work or in others.
+        
+        Appendix \ref{apx:interpolation_conditions} contains the proof of \Cref{thm:interp}, essential to use the PEP framework.
+        
+        Appendix \ref{apx:upper_assumption} contains all the proofs and discussions related to the extended class of the $\RG^+$ convex functions
+        
+        Finally, Appendix \ref{apx:restart} contains linear convergence result under an additional assumption similar to the classical quadratic growth assumption. This result is not presented in the main core in the paper, since it is a bit out of the scope of the main message. However, we thought it was worth mentioning it here.
+    
+    \hypersetup{linkcolor = black}
+    \setlength\cftparskip{2pt}
+    \setlength\cftbeforesecskip{2pt}
+    \setlength\cftaftertoctitleskip{3pt}
+    \addtocontents{toc}{\protect\setcounter{tocdepth}{2}}
+    \setcounter{tocdepth}{1}
+    \tableofcontents
+    \hypersetup{linkcolor=blue}
+    
+    \input{appendix}
+
+\end{document}
