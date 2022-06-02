@@ -264,7 +264,7 @@
         The first of those two methods explicitly relies on the knowledge of the class parameter $L$ for performing its updates, whereas the second variant allows avoiding using any knowledge on $L$.
         Note that the update rule from \Cref{alg:ogm} can equivalently be expressed as:
         \begin{equation}
-            x_k \gets x_{k-1} - \frac{1}{L}\frac{1}{k+1}g_{k-1} + \frac{k-1}{k+1}\left( x_{k-1} - x_{k-2} \right) \label{alg:hb_ogm}
+            x_k \gets x_{k-1} - \frac{1}{L}\frac{1}{k+1}g_{k-1} + \frac{k-1}{k+1}\left( x_{k-1} - x_{k-2} \right) \label{eq:hb_ogm}
         \end{equation}
         \begin{wrapfigure}[12]{R}{0.5\textwidth}
             \begin{minipage}{0.5\textwidth}
@@ -495,7 +495,7 @@
             \end{enumerate}
         \end{Rem}
         In the following, we consider the class of $h$-$\RG^+$ and convex functions.
-        We then propose Algorithm~\ref{alg:hb_general}, which consists in applying \Cref{alg:ogm} (with the update written as in \Cref{alg:hb_ogm}) to the $\QG^+$ convex function $h^{-1} \circ (f - f_\star)$.
+        We then propose Algorithm~\ref{alg:hb_general}, which consists in applying \Cref{alg:ogm} (with the update written as in \Cref{eq:hb_ogm}) to the $\QG^+$ convex function $h^{-1} \circ (f - f_\star)$.
         We obtain the following convergence rate.
     
         \begin{figure}[h!]
